@@ -14,7 +14,7 @@ A simple neural network I wrote to research about the fundamentals of backpropag
 - Local minima and training dynamics
 
 ## Current Challenge: 
-Debugging hidden layer weight updates - the final piece of the backpropagation puzzle.
+Updating logic so that the network learns to play better instead of only trying to predict the user's next move, based on the training data.
 
 ## This Isn't About RPS:
 This project is a vehicle for deeply understanding how neural networks actually work at the mathematical level.
