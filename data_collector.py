@@ -36,7 +36,7 @@ def run_loop(record, options, literals):
         record_data(record, (i+1) , curr, user)
 
 
-def dump(record):
+def dump(record, td_file_path):
     print("---------------------\n RECORDING GAME\n")
     with open(td_file_path, "w") as file:
         json.dump(record, file, indent=4)
