@@ -14,14 +14,11 @@ games = []
 
 for val in data.values():
     games.append(val)
-
-
 #----------------------------------------------------------------------------------------------------------
 
-
 #-------------INITIATION-----------------------------------------------------------------------------------
-input_layer = [0,0,0]
-hidden_layer = [0,0,0,0,0,0,0,0]
+input_layer = [0,0,0,0,0,0]
+hidden_layer = [0,0,0,0,0,0,0,0,0,0,0,0]
 output_layer = [0,0,0]
 
 weights1 = []
@@ -71,8 +68,8 @@ def store_param(w_h, w_o, b_h, b_o, param_file, training_completed):
 
 learning_rate = 0.05
 
-def log_res(condition, argmax, strongest):
-    print(f"\n\n-------------\n PLAY: {condition} ; RES: {strongest}, ",end="")
+def log_res(condition1, condition2, argmax, strongest):
+    print(f"\n\n-------------\n PLAY: {condition1} and {condition2}; RES: {strongest}, ",end="")
     match argmax:
         case 0:
             print("ROCK \n---------")
@@ -80,6 +77,42 @@ def log_res(condition, argmax, strongest):
             print("PAPER \n---------")
         case 2:
             print("SCISSORS \n---------")
+
+def setup_inputs(condition1, condition2, input_layer):
+    match condition1:
+        case 0:
+            input_layer[0] = 1
+            input_layer[1] = 0
+            input_layer[2] = 0
+        case 1:
+            input_layer[0] = 0
+            input_layer[1] = 1
+            input_layer[2] = 0
+        case 2:
+            input_layer[0] = 0
+            input_layer[1] = 0
+            input_layer[2] = 1
+        case _:
+            print("INVALID INPUT?? how did that happen? check the damn Training Data File")
+            exit()
+
+    match condition2:
+        case 0:
+            input_layer[3] = 1
+            input_layer[4] = 0
+            input_layer[5] = 0
+        case 1:
+            input_layer[3] = 0
+            input_layer[4] = 1
+            input_layer[5] = 0
+        case 2:
+            input_layer[3] = 0
+            input_layer[4] = 0
+            input_layer[5] = 1
+        case _:
+            print("INVALID INPUT?? how did that happen? check the damn Training Data File")
+            exit()
+
 
 def sigmoid(vector):
     for v in range(len(vector)):
@@ -101,48 +134,46 @@ def loss(ideal, output_layer):
         case 2:
             desired_vector = [0,0,1]
 
-    for i in range(3):  # Simple loop over 3 outputs
+    for i in range(3):
         errors[i] = (output_layer[i] - desired_vector[i])
 
     return errors
 
-def back_prop_output(learning_rate, hidden_layer, output_layer, weights2, error):
-    for oi, _ in enumerate(output_layer):
+def back_prop_output(learning_rate, hidden_layer, output_layer, weights2, bias_output, error):
+    for oi, _ in enumerate(output_layer): #WEIGHT UPDATE
         for hi, h in enumerate(hidden_layer): 
             del_w = learning_rate * h * 2 * error[oi]
             weights2[hi][oi] -= del_w
+    
+    for oi, _ in enumerate(output_layer): #BIAS UPDATE
+        del_b = learning_rate * 2 * error[oi]
+        bias_output[oi] -= del_b
+            
 
-def back_prop_hidden(learning_rate, input_layer, hidden_layer, output_layer, w1, w2, error):
-    total_blame = [0] * len(hidden_layer)
+def back_prop_hidden(learning_rate, input_layer, hidden_layer, output_layer, w1, w2,bias_hidden, error):
+    total_blame = [0] * len(hidden_layer) #WEIGHT UPDATE
     for hi, h in enumerate(hidden_layer):
         for oi, o in enumerate(output_layer):
-            total_blame[hi] += w2[hi][oi] * output_layer[oi] * (1 - output_layer[oi]) * 2* error[oi]
-        
-    for hi, h in enumerate(hidden_layer):
+            total_blame[hi] += w2[hi][oi] * output_layer[oi] * (1 - output_layer[oi]) * 2 * error[oi]
+
+    for hi, h in enumerate(hidden_layer): #WEIGHT UPDATE
         hidden_layer_part = h * (1-h)
         for ii, i in enumerate(input_layer):
             del_w = learning_rate * i * hidden_layer_part * total_blame[hi]
             w1[ii][hi] -= del_w
-            
+
+        del_b = learning_rate * hidden_layer_part * 2 * total_blame[hi]
+        bias_hidden[hi] -= del_b      
     
 def core(games, input_layer, hidden_layer, output_layer, weights1, weights2, bias_hidden, bias_output, param_file):
     training_completed = False
     for id, _ in enumerate(games):
-        condition = games[id][0]
-        #ideal = games[id+1][1] if id != len(games)-1 else games[0][0]
+        condition1 = games[id][0]
+        condition2 = games[id][1]
         ideal = games[id+1][1] if id != len(games)-1 else games[0][0]
 
-        match condition:
-            case 0:
-                input_layer = [1,0,0]
-            case 1:
-                input_layer = [0,1,0]
-            case 2:
-                input_layer = [0,0,1]
-            case _:
-                print("INVALID INPUT?? how did that happen? check the damn Training Data File")
-                exit()
-
+        setup_inputs(condition1, condition2, input_layer)
+        
         hidden_layer = feed_forward(input_layer, weights1, bias_hidden)
 
         output_layer = feed_forward(hidden_layer, weights2, bias_output)
@@ -154,14 +185,14 @@ def core(games, input_layer, hidden_layer, output_layer, weights1, weights2, bia
                 strongest = output
                 best_index = index
 
-        #log_res(condition, best_index, strongest)
+        log_res(condition1, condition2, best_index, strongest)
 
         error = loss(ideal, output_layer)
         print(error)
 
-        back_prop_output(learning_rate, hidden_layer, output_layer, weights2, error)
+        back_prop_output(learning_rate, hidden_layer, output_layer, weights2,bias_output, error)
 
-        back_prop_hidden(learning_rate, input_layer, hidden_layer, output_layer, weights1, weights2, error)
+        back_prop_hidden(learning_rate, input_layer, hidden_layer, output_layer, weights1, weights2,bias_hidden, error)
 
         training_completed = store_param(weights1, weights2, bias_hidden, bias_output, param_file, training_completed)
 
@@ -186,22 +217,37 @@ def play_log(best_index):
 
     print(f"AGENT: {ai_play},", end=" ")
 
+
+def setup_inputs_play(user_play, input_layer, output_layer):
+    match user_play:
+        case 'r':
+            input_layer[0] = 1
+            input_layer[1] = 0
+            input_layer[2] = 0
+        case 'p':
+            input_layer[0] = 0
+            input_layer[1] = 1
+            input_layer[2] = 0
+        case 's':
+            input_layer[0] = 0
+            input_layer[1] = 0
+            input_layer[2] = 1
+        case _:
+            print("FINISHING GAME")
+            exit()
+    
+    input_layer[3] = output_layer[0]
+    input_layer[4] = output_layer[1]
+    input_layer[5] = output_layer[2]
+
 def play(input_layer, hidden_layer, output_layer, weights1, weights2, bias_hidden, bias_output):
     user_play = 'r'
     choices = ['ROCK', 'PAPER', 'SCISSORS']
     print("AGENT: ", random.choice(choices), end=" ")
     while user_play in 'rps':
         user_play = input("INPUT: ")
-        match user_play:
-            case 'r':
-                input_layer = [1,0,0]
-            case 'p':
-                input_layer = [0,1,0]
-            case 's':
-                input_layer = [0,0,1]
-            case _:
-                print("FINISHING GAME")
-                exit()
+        
+        setup_inputs_play(user_play, input_layer, output_layer)
 
         hidden_layer_input = np.dot(input_layer, weights1) + bias_hidden
         hidden_layer = sigmoid(hidden_layer_input)
@@ -216,8 +262,7 @@ def play(input_layer, hidden_layer, output_layer, weights1, weights2, bias_hidde
             if output > strongest:
                 strongest = output
                 best_index = index
-                
-
+    
         play_log(best_index)
         
 core(games, input_layer, hidden_layer, output_layer, weights1, weights2, bias_hidden, bias_output, param_file)

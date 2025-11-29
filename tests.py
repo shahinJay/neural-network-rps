@@ -28,7 +28,7 @@ def backprop_1(out, hid, w2, b2, error):
 
 def backprop_2(out, hid, inp, w2, w1, b1, error):
   del_w = 0.2 * inp * hid*(1-hid) * w2 * out*(1-out) * 2*error
-  del_b = 0.2 * hid*(1-hid) * w2 * out*(1-out) * 2*error  # Same as above but without 'inp'
+  del_b = 0.2 * hid*(1-hid) * w2 * out*(1-out) * 2*error
   w1 -= del_w
   b1 -= del_b
 
